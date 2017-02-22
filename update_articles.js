@@ -5,11 +5,17 @@ const request = require('request-promise')
 const cron = require('node-cron')
 const r = require('rethinkdb')
 const parser = Promise.promisify(require('node-feedparser'))
+const ner = Promise.promisifyAll(require('ner'));
+
+const nerServerOptions= {
+  port: 9000,
+  host:'localhost'
+}
 
 function updateArticles() {
   let connection = null
 
-  r.connect( {host: 'localhost', port: 28015})
+  const parseRssFeedPromise = r.connect( {host: 'localhost', port: 28015})
     .then((conn) => {
       connection = conn
     })
@@ -19,18 +25,37 @@ function updateArticles() {
     .then((rssString) => {
       return parser(rssString)
     })
-    .then((rssFeed) => {
-      //The articles table has a primary key called link
-      //Each item in the article array has a link property which will be unique
-      //This way we ensure we only store each article once
-      return r.table('articles').insert(rssFeed.items).run(connection)
-    }).then((result) => {
-      console.log(result)
-      connection.close()
+
+
+  const getTaggedEntitiesPromise = parseRssFeedPromise.then((rssFeed) => {
+    let items = rssFeed.items.map((item) => {
+      return ner.getAsync(nerServerOptions, item.description)
     })
-    .catch((err) => {
-      console.error(err)
+  
+    return Promise.all(items)
+  })
+
+  Promise.join(parseRssFeedPromise, getTaggedEntitiesPromise, (rssFeed, taggedEntities) => {
+
+    let items = rssFeed.items.map((item, index) => {
+      let taggedEntitiesForItem = taggedEntities[index].entities
+      let flattenedTaggedEntitiesForItem = [...taggedEntitiesForItem.LOCATION, ...taggedEntitiesForItem.ORGANIZATION, ...taggedEntitiesForItem.PERSON]
+      return Object.assign({}, item, {'entities' : flattenedTaggedEntitiesForItem})
     })
+      
+    //The articles table has a primary key called link
+    //Each item in the article array has a link property which will be unique
+    //This way we ensure we only store each article once
+    return r.table('articles').insert(items).run(connection)
+  })
+  .then((result) => {
+    console.log(result)
+    connection.close()
+  })
+  .catch((err) => {
+    console.error(err)
+  })
 }
 
+updateArticles()
 cron.schedule('*/5 * * * *', updateArticles)
