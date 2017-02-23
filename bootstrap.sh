@@ -15,3 +15,5 @@ wget http://nlp.stanford.edu/software/stanford-ner-2016-10-31.zip
 unzip stanford-ner-2016-10-31.zip || true
 sudo wget https://raw.githubusercontent.com/Lily418/potential-disco/master/ner-server.sh -O stanford-ner-2016-10-31/ner-server.sh
 sudo chmod +x stanford-ner-2016-10-31/ner-server.sh 
+
+sudo mv /home/vagrant/env.sh /etc/profile.d/
