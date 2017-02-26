@@ -31,7 +31,7 @@ r.connect( {host: 'localhost', port: 28015})
 })
 
 function pushDistinctEntities() {
-  return r.table('articles').concatMap((article) => article('entities')).run(connection)
+  return r.table('articles').concatMap((article) => article('entities')).distinct().run(connection)
     .then((cursor) => {
       return cursor.toArray()
   }).then((results) => {
