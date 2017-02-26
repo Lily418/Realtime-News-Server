@@ -15,7 +15,7 @@ const pusher = new Pusher({
 let connection = null;
 
 
-r.connect( {host: 'localhost', port: 28015})
+r.connect( {host: process.env.RETHINK_DB_HOST , port: parseInt(process.env.RETHINK_DB_PORT)})
 .then( (conn) => {
   connection = conn
   return r.table('articles').changes().run(connection)
@@ -35,8 +35,11 @@ function pushDistinctEntities() {
     .then((cursor) => {
       return cursor.toArray()
   }).then((results) => {
-    return pusher.trigger('articles-channel', 'entity-list-updated', {
+    pusher.trigger('articles-channel', 'entity-list-updated', {
       entities : results
-    })
+    }, (error) => { if (error) {console.log(error)}})
+  }).catch((err) => {
+    console.log(err)
+    throw err
   })
 }

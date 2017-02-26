@@ -8,14 +8,14 @@ const parser = Promise.promisify(require('node-feedparser'))
 const ner = Promise.promisifyAll(require('ner'));
 
 const nerServerOptions= {
-  port: 9000,
-  host:'localhost'
+  port: parseInt(process.env.NER_PORT),
+  host:process.env.NER_HOST
 }
 
 function updateArticles() {
   let connection = null
 
-  const parseRssFeedPromise = r.connect( {host: 'localhost', port: 28015})
+  const parseRssFeedPromise = r.connect( {host: process.env.RETHINK_DB_HOST , port: parseInt(process.env.RETHINK_DB_PORT)})
     .then((conn) => {
       connection = conn
     })
