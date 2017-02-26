@@ -1,7 +1,9 @@
 'use strict';
 
+const moment = require('moment');
 const r = require('rethinkdb');
 const Pusher = require('pusher');
+
 
 const pusher = new Pusher({
   appId: process.env.RETHINK_DB_DEMO_PUSHER_APP_ID,
@@ -33,7 +35,8 @@ r.connect( {host: process.env.RETHINK_DB_HOST , port: parseInt(process.env.RETHI
 })
 
 function pushDistinctEntities() {
-  return r.table('articles').filter((doc) => doc.hasFields('entities'))
+  return r.table('articles').between(r.epochTime(moment().subtract(1, 'days').unix()),r.now(), {index: 'date'})
+                            .filter((doc) => doc.hasFields('entities'))
                             .concatMap((article) => article('entities'))
                             .distinct()
                             .run(connection)
