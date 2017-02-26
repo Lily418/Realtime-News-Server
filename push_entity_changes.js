@@ -18,7 +18,9 @@ let connection = null;
 r.connect( {host: process.env.RETHINK_DB_HOST , port: parseInt(process.env.RETHINK_DB_PORT)})
 .then( (conn) => {
   connection = conn
-  return r.table('articles').changes().run(connection)
+  return r.table('articles').filter((article) => article.hasFields('entities').and(article('entities').count().gt(0)))
+                            .changes()
+                            .run(connection)
 })
 .then((cursor) => {
   return cursor.eachAsync((row) => {
@@ -31,10 +33,14 @@ r.connect( {host: process.env.RETHINK_DB_HOST , port: parseInt(process.env.RETHI
 })
 
 function pushDistinctEntities() {
-  return r.table('articles').concatMap((article) => article('entities')).distinct().run(connection)
+  return r.table('articles').filter((doc) => doc.hasFields('entities'))
+                            .concatMap((article) => article('entities'))
+                            .distinct()
+                            .run(connection)
     .then((cursor) => {
       return cursor.toArray()
   }).then((results) => {
+    console.log(results)
     pusher.trigger('articles-channel', 'entity-list-updated', {
       entities : results
     }, (error) => { if (error) {console.log(error)}})
