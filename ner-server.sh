@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# This file exists to start the stanford named entity recognition server running, it is taken from https://github.com/niksrc/ner
+# but with the port updated to avoid a conflict with RethinkDB's admin console
+
 # Put this in the directory in which you extracted the STANFORD NER package.
 
 scriptdir=`dirname $0`
