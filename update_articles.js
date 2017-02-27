@@ -15,7 +15,7 @@ const nerServerOptions= {
 function updateArticles() {
   let connection = null
 
-  const parseRssFeedPromise = r.connect( {host: process.env.RETHINK_DB_HOST , port: parseInt(process.env.RETHINK_DB_PORT)})
+  const selectNewArticlesPromise = r.connect( {host: process.env.RETHINK_DB_HOST , port: parseInt(process.env.RETHINK_DB_PORT)})
     .then((conn) => {
       connection = conn
     })
@@ -25,19 +25,25 @@ function updateArticles() {
     .then((rssString) => {
       return parser(rssString)
     })
+    .then((rssFeed) => { 
+      //Select articles which are not already contained in the table
+      return r.expr(rssFeed.items).filter((item) => {
+        return r.table('articles')('link').contains(item("link")).not()
+      }).run(connection)
+    })
 
 
-  const getTaggedEntitiesPromise = parseRssFeedPromise.then((rssFeed) => {
-    let items = rssFeed.items.map((item) => {
+  const getTaggedEntitiesPromise = selectNewArticlesPromise.then((newArticles) => {
+    let items = newArticles.map((item) => {
       return ner.getAsync(nerServerOptions, item.description)
     })
   
     return Promise.all(items)
   })
 
-  Promise.join(parseRssFeedPromise, getTaggedEntitiesPromise, (rssFeed, taggedEntities) => {
+  Promise.join(selectNewArticlesPromise, getTaggedEntitiesPromise, (newArticles, taggedEntities) => {
 
-    let items = rssFeed.items.map((item, index) => {
+    let items = newArticles.map((item, index) => {
       let taggedEntitiesForItem = taggedEntities[index].entities
       let flattenedTaggedEntitiesForItem = [...taggedEntitiesForItem.LOCATION, ...taggedEntitiesForItem.ORGANIZATION, ...taggedEntitiesForItem.PERSON]
       return Object.assign({}, item, {'entities' : flattenedTaggedEntitiesForItem})
