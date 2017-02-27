@@ -1,5 +1,5 @@
 {
-  "name": "potential-disco",
+  "name": "realtime-news-server",
   "version": "1.0.0",
   "description": "Playing with RethinkDB",
   "main": "index.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Lily418/potential-disco.git"
+    "url": "git+https://github.com/Lily418/Realtime-News-Server.git"
   },
   "author": "Lily Hoskin",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Lily418/potential-disco/issues"
+    "url": "https://github.com/Lily418/Realtime-News-Server/issues"
   },
-  "homepage": "https://github.com/Lily418/potential-disco#readme",
+  "homepage": "https://github.com/Lily418/Realtime-News-Server#readme",
   "dependencies": {
     "bluebird": "3.4.7",
     "cors": "2.8.1",
