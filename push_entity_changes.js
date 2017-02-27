@@ -34,7 +34,7 @@ r.connect( {host: process.env.RETHINK_DB_HOST , port: parseInt(process.env.RETHI
   throw err
 })
 
-function pushDistinctEntities() {
+const selectDistinctEntities = (r, connection) => {
   return r.table('articles').between(r.epochTime(moment().subtract(1, 'days').unix()),r.now(), {index: 'date'})
                             .filter((doc) => doc.hasFields('entities'))
                             .concatMap((article) => article('entities'))
@@ -42,7 +42,11 @@ function pushDistinctEntities() {
                             .run(connection)
     .then((cursor) => {
       return cursor.toArray()
-  }).then((results) => {
+    })
+}
+
+function pushDistinctEntities() {
+    selectDistinctEntities(r, connection).then((results) => {
     console.log(results)
     pusher.trigger('articles-channel', 'entity-list-updated', {
       entities : results
@@ -52,3 +56,5 @@ function pushDistinctEntities() {
     throw err
   })
 }
+
+module.exports = { selectDistinctEntities }
