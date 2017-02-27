@@ -1,9 +1,12 @@
 'use strict'
 
+const cors = require('cors')
 const express = require("express")
 const r = require('rethinkdb')
 const selectDistinctEntities = require('./push_entity_changes.js').selectDistinctEntities
 const app = express()
+
+app.use(cors())
 
 let connection = null
 
