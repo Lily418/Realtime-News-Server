@@ -1,17 +1,18 @@
 "use strict"
 
+const Promise = require("bluebird")
 const moment = require("moment")
 const r = require("rethinkdb")
 const Pusher = require("pusher")
 
 
-const pusher = new Pusher({
+const pusher = Promise.promisifyAll(new Pusher({
     appId: process.env.RETHINK_DB_DEMO_PUSHER_APP_ID,
     key: process.env.RETHINK_DB_DEMO_PUSHER_KEY,
     secret: process.env.RETHINK_DB_DEMO_PUSHER_SECRET_KEY,
     cluster: process.env.RETHINK_DB_DEMO_PUSHER_CLUSTER,
     encrypted: true
-})
+}))
 
 
 let connection = null
@@ -46,11 +47,11 @@ const selectDistinctEntities = (r, connection) => {
 } 
 
 function pushDistinctEntities() {
-    selectDistinctEntities(r, connection).then((results) => {
+    return selectDistinctEntities(r, connection).then((results) => {
         console.log(results)
-        pusher.trigger("articles-channel", "entity-list-updated", {
+        return pusher.triggerAsync("articles-channel", "entity-list-updated", {
             entities : results
-        }, (error) => { if (error) {console.log(error)}})
+        })
     }).catch((err) => {
         console.log(err)
         throw err
